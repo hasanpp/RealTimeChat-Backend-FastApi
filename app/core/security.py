@@ -22,19 +22,17 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 def verify_google_token(token: str):
     try:
-        # Specify the CLIENT_ID of the app that accesses the backend:
-        id_info = id_token.verify_oauth2_token(token, requests.Request(), GOOGLE_CLIENT_ID)
-
-        # Or, if multiple clients access the backend server:
-        # id_info = id_token.verify_oauth2_token(token, requests.Request())
-        # if id_info['aud'] not in [CLIENT_ID_1, CLIENT_ID_2, ...]:
-        #     raise ValueError('Could not verify audience.')
-
-        # If auth request is from a G Suite domain:
-        # if id_info['hd'] != GSUITE_DOMAIN_NAME:
-        #     raise ValueError('Wrong hosted domain.')
-
-        # ID token is valid. Get the user's Google Account ID from the decoded token.
+        # Verify token signature and validate audience against whitelist of allowed clients
+        id_info = id_token.verify_oauth2_token(token, requests.Request())
+        
+        allowed_clients = [
+            GOOGLE_CLIENT_ID,
+            "630823825222-rn1is0r67748o3mmnt4b6dsuq0jg75kq.apps.googleusercontent.com"
+        ]
+        
+        if id_info.get("aud") not in allowed_clients:
+            raise ValueError(f"Audience {id_info.get('aud')} not allowed")
+            
         return id_info
     except ValueError as e:
         # Invalid token
